@@ -42,7 +42,7 @@ endif()
 
 if(NOT MSVC)
   # These compile definitions are not meaningful for MSVC
-  add_compile_options(-Wall -g -O3 -fvisibility=hidden -Wno-unknown-pragmas)
+  add_compile_options(-Wall -g -O3 -fvisibility=hidden -Wno-unknown-pragmas -DTHRUST_IGNORE_DEPRECATED_CPP_DIALECT)
 else()
   add_compile_options(/Wall /Zi)
   add_link_options(/DEBUG)
@@ -118,7 +118,7 @@ elseif(APPLE)
     set_target_properties(diffvg PROPERTIES INSTALL_RPATH "@loader_path")
 endif()
 
-set_property(TARGET diffvg PROPERTY CXX_STANDARD 11)
+set_property(TARGET diffvg PROPERTY CXX_STANDARD 14)
 set_target_properties(diffvg PROPERTIES PREFIX "")
 # Still enable assertion in release mode
 string( REPLACE "/DNDEBUG" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")

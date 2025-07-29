@@ -14,12 +14,23 @@ import random
 import ttools.modules
 import argparse
 import math
+from datetime import datetime
+import pickle
+import os
+import sys
 
 pydiffvg.set_print_timing(True)
 
 gamma = 1.0
 
 def main(args):
+    dir_name = datetime.now().strftime("%Y%m%d_%H%M%S-") + args.target.split('/')[-1].split('.')[0]
+    os.makedirs(f'results/{dir_name}', exist_ok=True)
+
+    # Save command used to run the script
+    with open(f'results/{dir_name}/command.txt', 'w') as f:
+        f.write('python ' + ' '.join(sys.argv))
+
     # Use GPU if available
     pydiffvg.set_use_gpu(torch.cuda.is_available())
     
@@ -116,7 +127,7 @@ def main(args):
                  0,   # seed
                  None,
                  *scene_args)
-    pydiffvg.imwrite(img.cpu(), 'results/painterly_rendering/init.png', gamma=gamma)
+    pydiffvg.imwrite(img.cpu(), f'results/{dir_name}/init.png', gamma=gamma)
 
     points_vars = []
     stroke_width_vars = []
@@ -162,7 +173,8 @@ def main(args):
         # Compose img with white background
         img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(img.shape[0], img.shape[1], 3, device = pydiffvg.get_device()) * (1 - img[:, :, 3:4])
         # Save the intermediate render.
-        pydiffvg.imwrite(img.cpu(), 'results/painterly_rendering/iter_{}.png'.format(t), gamma=gamma)
+        pydiffvg.imwrite(img.cpu(), f'results/{dir_name}/iter_{t}.png', gamma=gamma)
+        pydiffvg.imwrite(img.cpu(), f'results/{dir_name}/latest.png', gamma=gamma)
         img = img[:, :, :3]
         # Convert img from HWC to NCHW
         img = img.unsqueeze(0)
@@ -192,8 +204,14 @@ def main(args):
                 group.stroke_color.data.clamp_(0.0, 1.0)
 
         if t % 10 == 0 or t == args.num_iter - 1:
-            pydiffvg.save_svg('results/painterly_rendering/iter_{}.svg'.format(t),
+            pydiffvg.save_svg(f'results/{dir_name}/iter_{t}.svg',
                               canvas_width, canvas_height, shapes, shape_groups)
+
+    # Save shapes and shape groups using pickle instead of json
+    with open(f'results/{dir_name}/shapes.pkl', 'wb') as f:
+        pickle.dump(shapes, f)
+    with open(f'results/{dir_name}/shape_groups.pkl', 'wb') as f:
+        pickle.dump(shape_groups, f)
     
     # Render the final result.
     img = render(target.shape[1], # width
@@ -204,12 +222,12 @@ def main(args):
                  None,
                  *scene_args)
     # Save the intermediate render.
-    pydiffvg.imwrite(img.cpu(), 'results/painterly_rendering/final.png'.format(t), gamma=gamma)
+    pydiffvg.imwrite(img.cpu(), f'results/{dir_name}/final.png', gamma=gamma)
     # Convert the intermediate renderings to a video.
     from subprocess import call
     call(["ffmpeg", "-framerate", "24", "-i",
-        "results/painterly_rendering/iter_%d.png", "-vb", "20M",
-        "results/painterly_rendering/out.mp4"])
+        f"results/{dir_name}/iter_%d.png", "-vb", "20M",
+        f"results/{dir_name}/out.mp4"])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

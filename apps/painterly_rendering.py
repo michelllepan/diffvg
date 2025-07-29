@@ -113,7 +113,7 @@ def main(args):
                                              stroke_color = torch.tensor([random.random(),
                                                                           random.random(),
                                                                           random.random(),
-                                                                          random.random()]))
+                                                                          random.random() if not args.ignore_alpha else 1.0]))
             shape_groups.append(path_group)
     
     scene_args = pydiffvg.RenderFunction.serialize_scene(\
@@ -188,6 +188,12 @@ def main(args):
         # Backpropagate the gradients.
         loss.backward()
 
+        # Zero out alpha gradients for color variables
+        if args.ignore_alpha:
+            for color_var in color_vars:
+                if color_var.grad is not None:
+                    color_var.grad[..., 3] = 0.0
+
         # Take a gradient descent step.
         points_optim.step()
         if len(stroke_width_vars) > 0:
@@ -237,5 +243,6 @@ if __name__ == "__main__":
     parser.add_argument("--use_lpips_loss", dest='use_lpips_loss', action='store_true')
     parser.add_argument("--num_iter", type=int, default=500)
     parser.add_argument("--use_blob", dest='use_blob', action='store_true')
+    parser.add_argument("--ignore_alpha", dest='ignore_alpha', action='store_true')
     args = parser.parse_args()
     main(args)

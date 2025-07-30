@@ -6,5 +6,6 @@ compile_commands.json
 .vimrc
 diffvg.egg-info
 dist
+results
 __pycache__
 .DS_Store

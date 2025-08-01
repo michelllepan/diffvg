@@ -13,11 +13,13 @@ import skimage.io
 import random
 import ttools.modules
 import argparse
-import math
+
 from datetime import datetime
 import pickle
 import os
 import sys
+import json
+import numpy as np
 
 pydiffvg.set_print_timing(True)
 
@@ -233,6 +235,48 @@ def main(args):
     # call(["ffmpeg", "-framerate", "24", "-i",
     #     f"results/{dir_name}/iter_%d.png", "-vb", "20M",
     #     f"results/{dir_name}/out.mp4"])
+
+    # Convert strokes to json
+    def bezier_curve(P0, P1, P2, n_points=5):
+        """Quadratic Bezier curve."""
+        t = np.linspace(0, 1, n_points).reshape(-1, 1)
+        return (1 - t) ** 2 * P0 + 2 * (1 - t) * t * P1 + t ** 2 * P2
+
+    def cubic_bezier_curve(P0, P1, P2, P3, n_points=5):
+        """Cubic Bezier curve."""
+        t = np.linspace(0, 1, n_points).reshape(-1, 1)
+        return (1 - t) ** 3 * P0 + 3 * (1 - t) ** 2 * t * P1 + 3 * (1 - t) * t ** 2 * P2 + t ** 3 * P3
+    
+    json_strokes = []
+    for i in range(len(shapes)):
+        s = shapes[i].points.detach().cpu().numpy()
+        num_control_points = shapes[i].num_control_points.detach().cpu().numpy()
+        pts, idx = [], 0
+        for n in num_control_points: 
+            if n == 0:
+                p0, p1 = s[idx:idx+2]
+                pts.append(np.stack([p0, p1]))
+                idx += 1
+            elif n == 1:
+                p0, p1, p2 = s[idx:idx+3]
+                pts.append(bezier_curve(p0, p1, p2))
+                idx += 2
+            elif n == 2:
+                p0, p1, p2, p3 = s[idx:idx+4]
+                pts.append(cubic_bezier_curve(p0, p1, p2, p3))
+                idx += 3
+
+        pts = np.concatenate(pts, axis=0)
+        color = shape_groups[i].stroke_color.detach().cpu().numpy()
+        stroke_width = shapes[i].stroke_width.detach().cpu().numpy()
+        json_strokes.append({
+            "points": pts.tolist(),
+            "color": color.tolist(),
+            "stroke_width": float(stroke_width),
+        })
+
+    with open(f'results/{dir_name}/{dir_name.split("-")[1]}_strokes_diffvg.json', 'w') as f:
+        json.dump({"strokes": json_strokes}, f, indent=4)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

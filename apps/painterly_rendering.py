@@ -62,7 +62,7 @@ def main(args):
             p0 = (random.random(), random.random())
             points.append(p0)
             for j in range(num_segments):
-                radius = 0.05
+                radius = args.radius
                 p1 = (p0[0] + radius * (random.random() - 0.5), p0[1] + radius * (random.random() - 0.5))
                 p2 = (p1[0] + radius * (random.random() - 0.5), p1[1] + radius * (random.random() - 0.5))
                 p3 = (p2[0] + radius * (random.random() - 0.5), p2[1] + radius * (random.random() - 0.5))
@@ -93,7 +93,7 @@ def main(args):
             p0 = (random.random(), random.random())
             points.append(p0)
             for j in range(num_segments):
-                radius = 0.05
+                radius = args.radius
                 p1 = (p0[0] + radius * (random.random() - 0.5), p0[1] + radius * (random.random() - 0.5))
                 p2 = (p1[0] + radius * (random.random() - 0.5), p1[1] + radius * (random.random() - 0.5))
                 p3 = (p2[0] + radius * (random.random() - 0.5), p2[1] + radius * (random.random() - 0.5))
@@ -275,7 +275,7 @@ def main(args):
             "stroke_width": float(stroke_width),
         })
 
-    with open(f'results/{dir_name}/{dir_name.split("-")[1]}_strokes_diffvg.json', 'w') as f:
+    with open(f'results/{dir_name}/{dir_name.split("-")[1]}_diffvg.json', 'w') as f:
         json.dump({"strokes": json_strokes}, f, indent=4)
 
 if __name__ == "__main__":
@@ -287,5 +287,6 @@ if __name__ == "__main__":
     parser.add_argument("--num_iter", type=int, default=500)
     parser.add_argument("--use_blob", dest='use_blob', action='store_true')
     parser.add_argument("--ignore_alpha", dest='ignore_alpha', action='store_true')
+    parser.add_argument("--radius", type=float, default=0.05)
     args = parser.parse_args()
     main(args)

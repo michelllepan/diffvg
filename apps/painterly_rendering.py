@@ -48,7 +48,6 @@ def main(args):
     canvas_width, canvas_height = target.shape[3], target.shape[2]
     num_paths = args.num_paths
     max_width = args.max_width
-    
     random.seed(1234)
     torch.manual_seed(1234)
     
@@ -91,6 +90,8 @@ def main(args):
             num_control_points = torch.zeros(num_segments, dtype = torch.int32) + 2
             points = []
             p0 = (random.random(), random.random())
+            while (target[0, :, int(p0[1] * canvas_height), int(p0[0] * canvas_width)] == 1.).all():
+                p0 = (random.random(), random.random())
             points.append(p0)
             for j in range(num_segments):
                 radius = args.radius

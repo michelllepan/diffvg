@@ -44,6 +44,9 @@ def main(args):
     target = target.to(pydiffvg.get_device())
     target = target.unsqueeze(0)
     target = target.permute(0, 3, 1, 2) # NHWC -> NCHW
+    # Ensure target has only 3 channels (RGB) to match the rendered image
+    if target.shape[1] == 4:  # If RGBA
+        target = target[:, :3, :, :]  # Remove alpha channel
     #target = torch.nn.functional.interpolate(target, size = [256, 256], mode = 'area')
     canvas_width, canvas_height = target.shape[3], target.shape[2]
     num_paths = args.num_paths
